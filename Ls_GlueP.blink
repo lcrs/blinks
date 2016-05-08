@@ -90,13 +90,31 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     projection_matrix.setArray(pmd);
     float4 p4 = float4(p.x, p.y, p.z, 0.0);
     p4 = projection_matrix * p4;
+    if(outputclipspace && !outputready) {
+       o.x = p4.x;
+       o.y = p4.y;
+       o.z = p4.z;
+       outputready = true;
+    }
 
     // Clip space to NDC
     p4 /= p4.w;
+    if(outputndc && !outputready) {
+       o.x = p4.x;
+       o.y = p4.y;
+       o.z = p4.z;
+       outputready = true;
+    }
 
     // NDC to window
     p4 /= -2.0;
     p4 += 0.5;
+    if(outputuv && !outputready) {
+       o.x = p4.x;
+       o.y = p4.y;
+       o.z = 0.0f;
+       outputready = true;
+    }
 
     // Sample
     if(!outputready) {
