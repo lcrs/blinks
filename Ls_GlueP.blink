@@ -14,7 +14,7 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     bool outputviewspace, outputclipspace, outputndc, outputuv;
 
   local:
-    float projector_fov, aspect, fovx;
+    float aspect, vaperture, fovy, fovx, srcw, srch;
 
   void define() {
     defineParam(convertp, "Convert P pass from camera space", false);
@@ -39,10 +39,13 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
   }
 
   void init() {
-    projector_fov = 2.0 * atan(projector_haperture / (2.0 * projector_focal));
-    recti b = position.bounds;
-    aspect = (b.x2 - b.x1) / (b.y2 - b.y1);
-    fovx = deg2rad(projector_fov);
+    recti bb = src.bounds;
+    srcw = bb.x2 - bb.x1;
+    srch = bb.y2 - bb.y1;
+    aspect = srcw / srch;
+    vaperture = projector_haperture / aspect;
+    fovy = 2.0 * atan(vaperture / (2.0 * projector_focal));
+    fovx = 2.0 * atan(projector_haperture / (2.0 * projector_focal));
   }
 
   float deg2rad(float angle) {
@@ -73,6 +76,9 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     bool outputready = false;
     float3 o;
 
+    // Keep world space p for later, we need it for facing calc
+    float3 worldp = p;
+
     // World space to view space
     p -= projector_position;
     p = rotate(p, -projector_rotation);
@@ -83,8 +89,8 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
 
     // View space to clip space
     float4x4 projection_matrix;
-    float pmd[] = {1.0f/(tan(fovx/2.0f)), 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f/(1.0f/aspect)*tan(fovx/2.0f), 0.0f, 0.0f,
+    float pmd[] = {1.0f/tan(fovx/2.0f), 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f/tan(fovy/2.0f), 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f};
     projection_matrix.setArray(pmd);
@@ -98,7 +104,9 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     }
 
     // Clip space to NDC
-    p4 /= p4.w;
+    p4.x /= p4.w;
+    p4.y /= p4.w;
+    p4.z /= p4.w;
     if(outputndc && !outputready) {
        o.x = p4.x;
        o.y = p4.y;
@@ -107,8 +115,10 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     }
 
     // NDC to window
-    p4 /= -2.0;
-    p4 += 0.5;
+    p4.x /= -2.0f;
+    p4.y /= -2.0f;
+    p4.x += 0.5f;
+    p4.y += 0.5f;
     if(outputuv && !outputready) {
        o.x = p4.x;
        o.y = p4.y;
@@ -118,12 +128,12 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
 
     // Sample
     if(!outputready) {
-      SampleType(src) s = bilinear(src, p4.x, p4.y);
+      SampleType(src) s = bilinear(src, p4.x*srcw, p4.y*srch);
       o.x = s.x;
       o.y = s.y;
       o.z = s.z;
     }
-    
+
     // Output
     SampleType(dst) d;
     d.x = o.x;
@@ -132,4 +142,3 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     dst() = d;
   }
 };
-
