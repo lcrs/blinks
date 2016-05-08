@@ -20,25 +20,25 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     float aspect, vaperture, fovy, fovx, srcw, srch;
 
   void define() {
-    defineParam(convertp, "Convert P pass from camera space", false);
-    defineParam(convertn, "Convert N pass from camera space", false);
-    defineParam(outputp, "Output converted P", false);
-    defineParam(outputn, "Output converted N", false);
-    defineParam(worldcam_position, "Original CG camera position", float3(0.0, 0.0, 0.0));
-    defineParam(worldcam_rotation, "Original CG camera rotation", float3(0.0, 0.0, 0.0));
-    defineParam(projector_position, "Projector position", float3(0.0, 0.0, -100.0));
-    defineParam(projector_rotation, "Projector rotation", float3(0.0, 0.0, 0.0));
-    defineParam(projector_focal, "Projector focal length", 50.0f);
-    defineParam(projector_haperture, "Projector horizontal aperture", 23.76f);
-    defineParam(zclip, "Depth clip", false);
-    defineParam(frontface, "Project on front faces", true);
-    defineParam(backface, "Project on back faces", true);
-    defineParam(znear, "Depth clip near", 0.0f);
-    defineParam(zfar, "Depth clip far", 999999.0f);
-    defineParam(outputviewspace, "Output view space", false);
-    defineParam(outputclipspace, "Output clip space", false);
-    defineParam(outputndc, "Output NDC space", false);
-    defineParam(outputuv, "Output UVs", false);
+    defineParam(convertp, "ConvertPpassfromcameraspace", false);
+    defineParam(convertn, "ConvertNpassfromcameraspace", false);
+    defineParam(outputp, "OutputconvertedP", false);
+    defineParam(outputn, "OutputconvertedN", false);
+    defineParam(worldcam_position, "OriginalCGcameraposition", float3(0.0, 0.0, 0.0));
+    defineParam(worldcam_rotation, "OriginalCGcamerarotation", float3(0.0, 0.0, 0.0));
+    defineParam(projector_position, "Projectorposition", float3(0.0, 0.0, -100.0));
+    defineParam(projector_rotation, "Projectorrotation", float3(0.0, 0.0, 0.0));
+    defineParam(projector_focal, "Projectorfocallength", 50.0f);
+    defineParam(projector_haperture, "Projectorhorizontalaperture", 23.76f);
+    defineParam(zclip, "Depthclip", false);
+    defineParam(frontface, "Projectonfrontfaces", true);
+    defineParam(backface, "Projectonbackfaces", true);
+    defineParam(znear, "Depthclipnear", 0.0f);
+    defineParam(zfar, "Depthclipfar", 999999.0f);
+    defineParam(outputviewspace, "Outputviewspace", false);
+    defineParam(outputclipspace, "Outputclipspace", false);
+    defineParam(outputndc, "OutputNDCspace", false);
+    defineParam(outputuv, "OutputUVs", false);
   }
 
   void init() {
