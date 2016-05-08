@@ -1,0 +1,117 @@
+kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
+  Image<eRead, eAccessRandom, eEdgeClamped> src;
+  Image<eRead, eAccessPoint, eEdgeClamped> position;
+  Image<eRead, eAccessPoint, eEdgeClamped> normals;
+  Image<eWrite> dst;
+
+  param:
+    bool convertp, convertn, outputp, outputn;
+    float3 worldcam_position, worldcam_rotation;
+    float3 projector_position, projector_rotation;
+    float projector_focal, projector_haperture;
+    bool frontface, backface, zclip;
+    float znear, zfar;
+    bool outputviewspace, outputclipspace, outputndc, outputuv;
+
+  local:
+    float projector_fov, aspect, fovx;
+
+  void define() {
+    defineParam(convertp, "Convert P pass from camera space", false);
+    defineParam(convertn, "Convert N pass from camera space", false);
+    defineParam(outputp, "Output converted P", false);
+    defineParam(outputn, "Output converted N", false);
+    defineParam(worldcam_position, "Original CG camera position", float3(0.0, 0.0, 0.0));
+    defineParam(worldcam_rotation, "Original CG camera rotation", float3(0.0, 0.0, 0.0));
+    defineParam(projector_position, "Projector position", float3(0.0, 0.0, -100.0));
+    defineParam(projector_rotation, "Projector rotation", float3(0.0, 0.0, 0.0));
+    defineParam(projector_focal, "Projector focal length", 50.0f);
+    defineParam(projector_haperture, "Projector horizontal aperture", 23.76f);
+    defineParam(zclip, "Depth clip", false);
+    defineParam(frontface, "Project on front faces", true);
+    defineParam(backface, "Project on back faces", true);
+    defineParam(znear, "Depth clip near", 0.0f);
+    defineParam(zfar, "Depth clip far", 999999.0f);
+    defineParam(outputviewspace, "Output view space", false);
+    defineParam(outputclipspace, "Output clip space", false);
+    defineParam(outputndc, "Output NDC space", false);
+    defineParam(outputuv, "Output UVs", false);
+  }
+
+  void init() {
+    projector_fov = 2.0 * atan(projector_haperture / (2.0 * projector_focal));
+    recti b = position.bounds;
+    aspect = (b.x2 - b.x1) / (b.y2 - b.y1);
+    fovx = deg2rad(projector_fov);
+  }
+
+  float deg2rad(float angle) {
+    return(angle/(180.0/PI));
+  }
+
+  // Rotates about the origin in ZXY order
+  float3 rotate(float3 p, float3 angles) {
+    float x = deg2rad(angles.x);
+    float y = deg2rad(angles.y);
+    float z = deg2rad(angles.z);
+
+    float3x3 rx, ry, rz;
+    float rxd[] = {1.0, 0.0, 0.0, 0.0, cos(x), -sin(x), 0.0, sin(x), cos(x)};
+    float ryd[] = {cos(y), 0.0, sin(y), 0.0, 1.0, 0.0, -sin(y), 0.0, cos(y)};
+    float rzd[] = {cos(z), -sin(z), 0.0, sin(z), cos(z), 0.0, 0.0, 0.0, 1.0};
+    rx.setArray(rxd);
+    ry.setArray(ryd);
+    rz.setArray(rzd);
+
+    float3x3 r = rz * rx * ry;
+    return(r * p);
+  }
+
+  void process(int2 pos) {
+    SampleType(position) prgba = position();
+    float3 p = float3(prgba.x, prgba.y, prgba.z);
+    bool outputready = false;
+    float3 o;
+
+    // World space to view space
+    p -= projector_position;
+    p = rotate(p, -projector_rotation);
+    if(outputviewspace && !outputready) {
+       o = p;
+       outputready = true;
+    }
+
+    // View space to clip space
+    float4x4 projection_matrix;
+    float pmd[] = {1.0f/(tan(fovx/2.0f)), 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f/(1.0f/aspect)*tan(fovx/2.0f), 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		0.0f, 0.0f, 1.0f, 0.0f};
+    projection_matrix.setArray(pmd);
+    float4 p4 = float4(p.x, p.y, p.z, 0.0);
+    p4 = projection_matrix * p4;
+
+    // Clip space to NDC
+    p4 /= p4.w;
+
+    // NDC to window
+    p4 /= -2.0;
+    p4 += 0.5;
+
+    // Sample
+    if(!outputready) {
+      SampleType(src) s = bilinear(src, p4.x, p4.y);
+      o.x = s.x;
+      o.y = s.y;
+      o.z = s.z;
+    }
+    
+    // Output
+    SampleType(dst) d;
+    d.x = o.x;
+    d.y = o.y;
+    d.z = o.z;
+    dst() = d;
+  }
+};
+
