@@ -39,6 +39,12 @@ Group {
   ypos 159
   number 2
  }
+ Crop {
+  box {{Crop1.box.x} {Crop1.box.y} {Crop1.box.r} {Crop1.box.t}}
+  name Crop2
+  xpos -40
+  ypos 221
+ }
  Input {
   inputs 0
   name InputP
@@ -52,7 +58,7 @@ Group {
   xpos -260
   ypos 159
  }
-set N11be1820 [stack 0]
+set N52042600 [stack 0]
  BlinkScript {
   inputs 3
   kernelSourceFile /works/blinks/blinks/Ls_GlueP.blink
@@ -83,14 +89,14 @@ set N11be1820 [stack 0]
   ypos 302
  }
  Crop {
-  box {0 0 1280 720}
+  box {0 0 {width} {height}}
   crop false
   name Crop1
   xpos -150
   ypos 334
  }
-set N2952ed00 [stack 0]
-push $N11be1820
+set N52063400 [stack 0]
+push $N52042600
  STMap {
   inputs 2
   uv rgb
@@ -98,7 +104,7 @@ push $N11be1820
   xpos -260
   ypos 371
  }
-push $N2952ed00
+push $N52063400
  Switch {
   inputs 2
   which {{"parent.outputselect == 0 ? 1 : 0"}}
@@ -115,8 +121,8 @@ push $N2952ed00
   inputs 0
   name StickyNote1
   label "this crop stops it crashing... idk"
-  note_font "Verdana Italic"
-  xpos -53
+  note_font "Verdana Italic Italic"
+  xpos -52
   ypos 332
  }
 end_group
