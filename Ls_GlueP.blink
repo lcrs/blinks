@@ -14,7 +14,7 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     float projector_focal, projector_haperture;
     bool frontface, backface, zclip;
     float znear, zfar;
-    bool outputviewspace, outputclipspace, outputndc, outputuv;
+    bool outputviewspace, outputclipspace, outputndc, outputuv, outputfacingratio;
 
   local:
     float aspect, vaperture, fovy, fovx, srcw, srch;
@@ -39,6 +39,7 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     defineParam(outputclipspace, "Outputclipspace", false);
     defineParam(outputndc, "OutputNDCspace", false);
     defineParam(outputuv, "OutputUVs", false);
+    defineParam(outputfacingratio, "OutputFacingRatio", false);
   }
 
   void init() {
@@ -148,6 +149,10 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     // Facing
     float3 v = normalize(projector_position - worldp);
     float facingratio = dot(n, v);
+    if(outputfacingratio && !outputready) {
+        o = float3(facingratio);
+        outputready = true;
+    }
     if((facingratio > 0.0 && !frontface) || (facingratio < 0.0 && !backface)) {
         o = float3(0.0);
         outputready = true;
