@@ -1,5 +1,10 @@
 // GlueP: project onto a position pass
 // lewis@lewissaunders.com
+// TODO:
+//  o fix the egregious crashing
+//  o rearrange the output selection logic, translating
+//    the return statements into setting a flag was stupid
+//  o I wonder what happens when inputs are different sizes
 
 kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
   Image<eRead, eAccessRandom, eEdgeClamped> src;
@@ -15,9 +20,10 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     bool frontface, backface, zclip;
     float znear, zfar;
     bool outputviewspace, outputclipspace, outputndc, outputuv, outputfacingratio;
+    int srcwidth, srcheight;
 
   local:
-    float aspect, vaperture, fovy, fovx, srcw, srch;
+    float aspect, vaperture, fovy, fovx;
 
   void define() {
     defineParam(convertp, "ConvertPpassfromcameraspace", false);
@@ -40,13 +46,12 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     defineParam(outputndc, "OutputNDCspace", false);
     defineParam(outputuv, "OutputUVs", false);
     defineParam(outputfacingratio, "OutputFacingRatio", false);
+    defineParam(srcwidth, "Srcwidth", 1920);
+    defineParam(srcheight, "Srcheight", 1080);
   }
 
   void init() {
-    recti bb = src.bounds;
-    srcw = bb.x2 - bb.x1;
-    srch = bb.y2 - bb.y1;
-    aspect = srcw / srch;
+    aspect = max(float(srcwidth), 1.0f) / max(float(srcheight), 1.0f);
     vaperture = projector_haperture / aspect;
     fovy = 2.0 * atan(vaperture / (2.0 * projector_focal));
     fovx = 2.0 * atan(projector_haperture / (2.0 * projector_focal));
@@ -195,7 +200,7 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
 
     // Sample
     if(!outputready) {
-      SampleType(src) s = bilinear(src, p4.x*srcw, p4.y*srch);
+      SampleType(src) s = bilinear(src, p4.x*srcwidth, p4.y*srcheight);
       o.x = s.x;
       o.y = s.y;
       o.z = s.z;
