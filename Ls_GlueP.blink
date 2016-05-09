@@ -53,12 +53,12 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
   void init() {
     aspect = max(float(srcwidth), 1.0f) / max(float(srcheight), 1.0f);
     vaperture = projector_haperture / aspect;
-    fovy = 2.0 * atan(vaperture / (2.0 * projector_focal));
-    fovx = 2.0 * atan(projector_haperture / (2.0 * projector_focal));
+    fovy = 2.0f * atan(vaperture / (2.0f * projector_focal));
+    fovx = 2.0f * atan(projector_haperture / (2.0f * projector_focal));
   }
 
   float deg2rad(float angle) {
-    return(angle/(180.0/PI));
+    return(angle/(180.0f/PI));
   }
 
   // Rotates about the origin in ZXY order
@@ -109,12 +109,12 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
 
     // Optionally, convert P and N passes from camera space to world space
     if(convertp) {
-      p.z *= -1.0;
+      p.z *= -1.0f;
       p = unrotate(p, -worldcam_rotation);
       p += worldcam_position;
     }
     if(convertn) {
-      n.z *= -1.0;
+      n.z *= -1.0f;
       n = unrotate(n, -worldcam_rotation);
     }
     if(outputp && !outputready) {
@@ -140,14 +140,14 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
     // Optional clipping
     if(zclip) {
       if(-p.z < znear || -p.z > zfar) {
-        o = float3(0.0);
+        o = float3(0.0f);
         outputready = true;
       }
     }
 
     // Clip behind projector
-    if(p.z > 0.0) {
-        o = float3(0.0);
+    if(p.z > 0.0f) {
+        o = float3(0.0f);
         outputready = true;
     }
 
@@ -158,8 +158,8 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
         o = float3(facingratio);
         outputready = true;
     }
-    if((facingratio > 0.0 && !frontface) || (facingratio < 0.0 && !backface)) {
-        o = float3(0.0);
+    if((facingratio > 0.0f && !frontface) || (facingratio < 0.0f && !backface)) {
+        o = float3(0.0f);
         outputready = true;
     }
 
@@ -170,7 +170,7 @@ kernel Ls_GlueP : ImageComputationKernel<ePixelWise> {
 		0.0f, 0.0f, 1.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f};
     projection_matrix.setArray(pmd);
-    float4 p4 = float4(p.x, p.y, p.z, 0.0);
+    float4 p4 = float4(p.x, p.y, p.z, 0.0f);
     p4 = projection_matrix * p4;
     if(outputclipspace && !outputready) {
        o.x = p4.x;
